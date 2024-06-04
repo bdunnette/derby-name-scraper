@@ -7,8 +7,10 @@ name = "pypi"
 pandas = {extras = ["html"], version = "*"}
 requests = "*"
 luigi = "*"
+advertools = "*"
 
 [dev-packages]
+ipykernel = "*"
 
 [requires]
 python_version = "3.11"
