@@ -1,9 +1,9 @@
 import logging
 import string
 import tempfile
+import unicodedata
 from datetime import datetime
 from pathlib import Path
-from re import S
 
 import luigi
 import pandas as pd
@@ -230,9 +230,14 @@ class NameList(luigi.Task):
         logger.info(msg=f"Creating name list...")
         logger.debug(msg=self.input()["names"])
         df = pd.read_csv(filepath_or_buffer=self.input()["names"].path)
-        df = df.drop_duplicates(subset=["Name"]).sort_values(by=["Name"])["Name"]
+        df = df.drop_duplicates(subset=["Name"]).sort_values(by=["Name"])[["Name"]]
+        logger.debug(df.columns)
         if self.ascii_only:
-            df = df.apply(func=lambda x: "".join(filter(str.isascii, x)))
+            df["Name"] = df["Name"].apply(
+                lambda x: unicodedata.normalize("NFKD", x)
+                .encode(encoding="ascii", errors="ignore")
+                .decode(encoding="utf-8")
+            )
             outfile = "derby_names_ascii.txt"
         else:
             outfile = "derby_names.txt"
