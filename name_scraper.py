@@ -66,7 +66,7 @@ class ScrapeDRC(luigi.Task):
         logger = logging.getLogger(name="luigi-interface")
 
         logger.info(msg=f"Downloading DRC derby names...")
-        df = utils.fetch_drc()
+        df = utils.fetch_drc().sort_values(by=["Name"])
         logger.info(msg=f"Writing {self.output().path}...")
         with self.output().temporary_path() as f:
             df.to_csv(path_or_buf=f, index=False)
