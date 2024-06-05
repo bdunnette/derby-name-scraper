@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 session = requests.Session()
 
+
 def fetch_wftda():
     # Fetch data from the WFTDA website
     # and return it as a pandas DataFrame
@@ -27,33 +28,42 @@ def fetch_wftda():
     except Exception as e:
         print("Error fetching data: {}".format(e))
         return None
-    
+
+
 def fetch_twoevils():
     # Fetch data from the Two Evils website
     # and return it as a pandas DataFrame
     try:
         twoevils_df = pd.DataFrame()
         url = "https://twoevils.org/rollergirls/"
-        twoevils_df = pd.read_html(io=url, skiprows=1)[0]
-        twoevils_df.columns = [h.replace("Skater", "").strip() for h in twoevils_df.iloc[0]]
+        twoevils_df = pd.read_html(io=url, skiprows=1, encoding="utf-8")[0]
+        twoevils_df.columns = [
+            h.replace("Skater", "").strip() for h in twoevils_df.iloc[0]
+        ]
         twoevils_df = twoevils_df.rename(columns={"Date Added": "Registered"})
         twoevils_df = twoevils_df.iloc[1:-1, :].dropna(how="all")
         return twoevils_df
     except Exception as e:
         print("Error fetching data: {}".format(e))
         return None
-    
+
+
 def fetch_drc():
     # Fetch data from the Derby Roll Call website
     # and return it as a pandas DataFrame
     try:
-        drc_url =  "http://www.derbyrollcall.com/everyone"
-        drc_df = pd.read_html(io=drc_url)[0].rename(columns={"#": "Number"}).dropna(subset=["Name"])
+        drc_url = "http://www.derbyrollcall.com/everyone"
+        drc_df = (
+            pd.read_html(io=drc_url, encoding="utf-8")[0]
+            .rename(columns={"#": "Number"})
+            .dropna(subset=["Name"])
+        )
         return drc_df
     except Exception as e:
         print("Error fetching data: {}".format(e))
         return None
-    
+
+
 def get_rdr_names(initial_letter):
     temp_names = []
     url = f"https://rollerderbyroster.com/view-names/?ini={initial_letter}"
@@ -93,7 +103,8 @@ def fetch_rdr(letters=string.ascii_uppercase + string.digits):
     except Exception as e:
         print("Error fetching data: {}".format(e))
         return None
-    
+
+
 def fetch_rdn_urls():
     # Fetch data from the Roller Derby Nations website
     # and return it as a pandas DataFrame
@@ -119,18 +130,20 @@ def fetch_rdn_urls():
     except Exception as e:
         print("Error fetching data: {}".format(e))
         return None
-    
+
+
 def fetch_rdn_league(url):
     # Fetch data from a Roller Derby Nations league page
     # and return it as a pandas DataFrame
     try:
-        rdn_league_df = pd.read_html(io=url)
+        rdn_league_df = pd.read_html(io=url, encoding="utf-8")
         rdn_league_df = rdn_league_df.rename(columns={"Derby Name": "Name"})
         return rdn_league_df
     except Exception as e:
         print("Error fetching data: {}".format(e))
         return None
-    
+
+
 def fetch_rdn():
     # Fetch data from the Roller Derby Nations website
     # and return it as a pandas DataFrame
