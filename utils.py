@@ -1,11 +1,11 @@
 import string
 from pathlib import Path
+from typing import Type
 
-from bs4 import BeautifulSoup
-import requests
-
-import pandas as pd
 import advertools as adv
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 session = requests.Session()
 
@@ -16,13 +16,13 @@ def fetch_wftda():
         session.headers.update({"User-Agent": "Mozilla/5.0"})
         wftda_df = pd.DataFrame()
         url = "https://resources.wftda.org/officiating/roller-derby-certification-program-for-officials/roster-of-certified-officials/"
-        
-        r = session.get(url)
-        soup = BeautifulSoup(r.text, "lxml")
-        rows = soup.find_all("h5")
+
+        r = session.get(url=url)
+        soup = BeautifulSoup(markup=r.text, features="lxml")
+        rows = soup.find_all(name="h5")
         urls = [r.find("a")["href"] for r in rows]
         names = [r.find("a").get_text() for r in rows]
-        wftda_df = pd.DataFrame({"Name": names, "url": urls})
+        wftda_df = pd.DataFrame(data={"Name": names, "url": urls})
         return wftda_df
     except Exception as e:
         print("Error fetching data: {}".format(e))
@@ -59,29 +59,36 @@ def get_rdr_names(initial_letter):
     url = f"https://rollerderbyroster.com/view-names/?ini={initial_letter}"
     # print("Downloading names from {}".format(url))
     try:
-        r = session.get(url)
-        soup = BeautifulSoup(r.text, "lxml")
-        rows = soup.find_all("ul")
+        r = session.get(url=url)
+        soup = BeautifulSoup(markup=r.text, features="lxml")
+        rows = soup.find_all(name="ul")
         # Use only last unordered list - this is where names are!
-        for idx, li in enumerate(rows[-1]):
+        for idx, li in enumerate(iterable=rows[-1]):
             # Name should be the text of the link within the list item
-            name = li.find("a").get_text()
-            temp_names.append(name)
+            try:
+                div = li.find("div", {"class": "search-info"})
+                if div is None:
+                    continue
+                else:
+                    name = div.find("a").get_text()
+                    temp_names.append(name)
+            except TypeError:
+                pass
         rdr_df = pd.DataFrame(data={"Name": temp_names, "url": url})
         return rdr_df
     except requests.Timeout:
         print("Timeout!")
         pass
-    return temp_names
 
-def fetch_rdr():
+
+def fetch_rdr(letters=string.ascii_uppercase + string.digits):
     # Fetch data from the Roller Derby Roster website
     # and return it as a pandas DataFrame
     try:
         rdr_df = pd.DataFrame()
-        for letter in string.ascii_uppercase:
-            temp_df = get_rdr_names(letter)
-            rdr_df = pd.concat([rdr_df, temp_df], ignore_index=True)
+        for letter in letters:
+            temp_df = get_rdr_names(initial_letter=letter)
+            rdr_df = pd.concat(objs=[rdr_df, temp_df], ignore_index=True)
         return rdr_df
     except Exception as e:
         print("Error fetching data: {}".format(e))
@@ -93,18 +100,18 @@ def fetch_rdn_urls():
     try:
         # Get RDNation sitemap
         rdn_sitemap_url = "https://rdnation.com/sitemap.xml"
-        rdn_sitemaps = adv.sitemap_to_df(rdn_sitemap_url)
+        rdn_sitemaps = adv.sitemap_to_df(sitemap_url=rdn_sitemap_url)
         # League pages have a specific URL structure
         rdn_sitemaps["is_league"] = (
-            rdn_sitemaps["loc"].str.contains("roller-derby-league/").fillna(False)
+            rdn_sitemaps["loc"].str.contains(pat="roller-derby-league/").fillna(False)
         )
 
         rdn_league_urls = sorted(
             rdn_sitemaps[
                 rdn_sitemaps["is_league"]
                 & (
-                    rdn_sitemaps["loc"].str.contains("/2/")
-                    | rdn_sitemaps["loc"].str.contains("/1/")
+                    rdn_sitemaps["loc"].str.contains(pat="/2/")
+                    | rdn_sitemaps["loc"].str.contains(pat="/1/")
                 )
             ]["loc"].tolist()
         )
@@ -131,8 +138,8 @@ def fetch_rdn():
         rdn_df = pd.DataFrame()
         rdn_league_urls = fetch_rdn_urls()
         for url in rdn_league_urls:
-            temp_df = fetch_rdn_league(url)
-            rdn_df = pd.concat([rdn_df, temp_df], ignore_index=True)
+            temp_df = fetch_rdn_league(url=url)
+            rdn_df = pd.concat(objs=[rdn_df, temp_df], ignore_index=True)
         return rdn_df
     except Exception as e:
         print("Error fetching data: {}".format(e))
