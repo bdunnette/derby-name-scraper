@@ -230,7 +230,7 @@ class NameList(luigi.Task):
         logger.info(msg=f"Creating name list...")
         logger.debug(msg=self.input()["names"])
         df = pd.read_csv(filepath_or_buffer=self.input()["names"].path)
-        df = df.drop_duplicates(subset=["Name"]).sort_values(by=["Name"])[["Name"]]
+        df = df.drop_duplicates(subset=["Name"])[["Name"]]
         logger.debug(df.columns)
         if self.ascii_only:
             df["Name"] = df["Name"].apply(
@@ -241,6 +241,7 @@ class NameList(luigi.Task):
             outfile = "derby_names_ascii.txt"
         else:
             outfile = "derby_names.txt"
+        df = df.sort_values(by=["Name"])
         logger.info(msg=f"Writing {self.output().path}...")
         with self.output().temporary_path() as f:
             df.to_csv(path_or_buf=f, index=False, header=False)
