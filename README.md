@@ -6,7 +6,7 @@ Scraping [derby names](https://en.wikipedia.org/wiki/Roller_derby#Derby_names) f
 
 ## Description
 
-Extract specimen data from StarLIMS and create a Parquet file for further analysis.
+Download roller derby names from public sources and save them for further analysis.
 
 ## Installation
 
